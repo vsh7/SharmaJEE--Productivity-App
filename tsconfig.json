@@ -1,10 +1,19 @@
 {
-  "compilerOptions": {},
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
   "extends": "expo/tsconfig.base",
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "hooks/use-color-scheme.js", "hooks/use-color-scheme.web.js", "hooks/use-theme-color.js"  ]
+    "expo-env.d.ts",
+    "hooks/use-color-scheme.js",
+    "hooks/use-color-scheme.web.js",
+    "hooks/use-theme-color.js"
+  ]
 }
