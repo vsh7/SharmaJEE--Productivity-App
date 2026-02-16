@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
 const signup = async (req, res) => {
   try {
@@ -6,6 +7,7 @@ const signup = async (req, res) => {
 
   
     const userExists = await User.findOne({ email });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
@@ -15,7 +17,7 @@ const signup = async (req, res) => {
     const user = new User({
       name,
       email,
-      password,
+      password : hashedPassword,
       role,
     });
 
@@ -31,5 +33,43 @@ const signup = async (req, res) => {
   }
 };
 
-module.exports = { signup };
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // here we are checking if the user exits on not
+    const user = await User.findOne({ email });
+const isMatch = await bcrypt.compare(password, user.password);
+
+if (!isMatch) {
+  return res.status(400).json({ message: "Invalid password" });
+}
+
+    // password checking
+    if (user.password !== password) {
+      return res.status(400).json({
+        message: "Invalid password",
+      });
+    }
+
+    // after email and password both exists we check if it is correct or not
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+
+  } catch (error) {
+   
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { signup ,login};
 
