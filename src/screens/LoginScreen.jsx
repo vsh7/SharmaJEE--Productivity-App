@@ -153,7 +153,13 @@ const LoginScreen = () => {
 
             <TouchableOpacity
               style={[styles.primaryButton, { backgroundColor: theme.btnPrimaryBg }]}
-              onPress={() => router.replace('/dashboard')}
+              onPress={() => {
+                if (userType === 'mentor') {
+                  router.replace('/mentor/dashboard');
+                } else {
+                  router.replace('/dashboard');
+                }
+              }}
             >
               <Text style={[styles.primaryButtonText, { color: theme.btnPrimaryText }]}>Continue</Text>
             </TouchableOpacity>
