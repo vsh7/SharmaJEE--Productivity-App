@@ -1,6 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -10,6 +13,7 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import api from '../api';
 
 const MentorDashboard = () => {
     // 1. Detect System Theme
@@ -32,10 +36,40 @@ const MentorDashboard = () => {
         iconBgPurple: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#F5F3FF',
     };
 
+    const [overview, setOverview] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const handleLogout = async () => {
+        await AsyncStorage.multiRemove(['userToken', 'userRole']);
+        router.replace('/login');
+    };
+
     const getTodayDate = () => {
         const date = new Date();
         return date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
     };
+
+    useEffect(() => {
+        const fetchOverview = async () => {
+            try {
+                const res = await api.get('/api/mentor/overview');
+                setOverview(res.data);
+            } catch (error) {
+                console.error('Error fetching mentor overview:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchOverview();
+    }, []);
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.accentBlue} />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -47,8 +81,8 @@ const MentorDashboard = () => {
                     <Text style={[styles.dateText, { color: theme.textSub }]}>{getTodayDate()}</Text>
                     <Text style={[styles.welcomeText, { color: theme.textMain }]}>Welcome, Mentor!</Text>
                 </View>
-                <TouchableOpacity style={[styles.profileBtn, { backgroundColor: theme.cardBg }]}>
-                    <Ionicons name="person" size={20} color={theme.textMain} />
+                <TouchableOpacity style={[styles.profileBtn, { backgroundColor: theme.cardBg }]} onPress={handleLogout}>
+                    <Ionicons name="log-out-outline" size={20} color={theme.textMain} />
                 </TouchableOpacity>
             </View>
 
@@ -59,7 +93,7 @@ const MentorDashboard = () => {
                 <View style={styles.statsGrid}>
                     <StatCard
                         label="Active Students"
-                        value="45"
+                        value={String(overview?.activeStudents ?? 0)}
                         icon="account-group"
                         color={theme.accentBlue}
                         bg={theme.iconBgBlue}
@@ -67,7 +101,7 @@ const MentorDashboard = () => {
                     />
                     <StatCard
                         label="Reports Submitted"
-                        value="32"
+                        value={String(overview?.reportsToday ?? 0)}
                         icon="clipboard-text"
                         color={theme.accentGreen}
                         bg={theme.iconBgGreen}
@@ -75,7 +109,7 @@ const MentorDashboard = () => {
                     />
                     <StatCard
                         label="Pending Feedback"
-                        value="12"
+                        value={String(overview?.pendingFeedback ?? 0)}
                         icon="message-alert"
                         color={theme.accentOrange}
                         bg={theme.iconBgOrange}
@@ -83,7 +117,7 @@ const MentorDashboard = () => {
                     />
                     <StatCard
                         label="Timetables Set"
-                        value="38"
+                        value={String(overview?.timetablesToday ?? 0)}
                         icon="calendar-check"
                         color={theme.accentPurple}
                         bg={theme.iconBgPurple}

@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     FlatList,
     StatusBar,
@@ -11,33 +11,29 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// --- MOCK DATA ---
-const INITIAL_TIMETABLES = [
-    {
-        id: '1',
-        studentName: 'Rahul Kumar',
-        date: '2026-03-07',
-        tasks: [
-            { id: 't1', title: 'Physics Mechanics', isCompleted: true },
-            { id: 't2', title: 'Chemistry Organic', isCompleted: false }
-        ]
-    },
-    {
-        id: '2',
-        studentName: 'Priya Sharma',
-        date: '2026-03-07',
-        tasks: [
-            { id: 't3', title: 'Math Calculus', isCompleted: true },
-            { id: 't4', title: 'Biology Revision', isCompleted: true }
-        ]
-    }
-];
+import api from '../api';
 
 const MentorStudentsTimetables = () => {
     const isDarkMode = useColorScheme() === 'dark';
     const router = useRouter();
-    const [timetables, setTimetables] = useState(INITIAL_TIMETABLES);
+    const [timetables, setTimetables] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchTimetables = async () => {
+            try {
+                setIsLoading(true);
+                const response = await api.get('/api/mentor/timetables');
+                setTimetables(response.data || []);
+            } catch (error) {
+                console.error('Error fetching timetables:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchTimetables();
+    }, []);
 
     const theme = {
         background: isDarkMode ? '#0F172A' : '#F3F4F6',
@@ -50,35 +46,37 @@ const MentorStudentsTimetables = () => {
     };
 
     const renderTimetable = ({ item }) => {
-        const totalTasks = item.tasks.length;
-        const completedTasks = item.tasks.filter(t => t.isCompleted).length;
+        const studentName = item.student?.name || 'Unknown Student';
+        const tasks = item.tasks || [];
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter(t => t.isDone).length;
 
         return (
             <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.borderColor }]}>
                 <View style={styles.cardHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }} onPress={() => router.push(`/mentor/student-stats?studentId=${item.student?._id}`)}>
                         <View style={[styles.avatar, { backgroundColor: theme.primaryBlue + '20' }]}>
-                            <Text style={[styles.avatarText, { color: theme.primaryBlue }]}>{item.studentName.charAt(0)}</Text>
+                            <Text style={[styles.avatarText, { color: theme.primaryBlue }]}>{studentName.charAt(0)}</Text>
                         </View>
                         <View>
-                            <Text style={[styles.studentName, { color: theme.textMain }]}>{item.studentName}</Text>
+                            <Text style={[styles.studentName, { color: theme.textMain }]}>{studentName}</Text>
                             <Text style={[styles.taskCount, { color: theme.textSub }]}>{completedTasks} of {totalTasks} tasks done</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 </View>
 
                 <View style={[styles.divider, { backgroundColor: theme.borderColor }]} />
 
-                {item.tasks.map(task => (
-                    <View key={task.id} style={styles.taskRow}>
+                {tasks.map(task => (
+                    <View key={task._id} style={styles.taskRow}>
                         <MaterialCommunityIcons
-                            name={task.isCompleted ? "check-circle" : "checkbox-blank-circle-outline"}
+                            name={task.isDone ? "check-circle" : "checkbox-blank-circle-outline"}
                             size={18}
-                            color={task.isCompleted ? theme.taskDoneText : theme.textSub}
+                            color={task.isDone ? theme.taskDoneText : theme.textSub}
                         />
                         <Text style={[
                             styles.taskTitle,
-                            { color: task.isCompleted ? theme.textSub : theme.textMain, textDecorationLine: task.isCompleted ? 'line-through' : 'none' }
+                            { color: task.isDone ? theme.textSub : theme.textMain, textDecorationLine: task.isDone ? 'line-through' : 'none' }
                         ]}>
                             {task.title}
                         </Text>
@@ -101,7 +99,7 @@ const MentorStudentsTimetables = () => {
 
             <FlatList
                 data={timetables}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item._id}
                 renderItem={renderTimetable}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}

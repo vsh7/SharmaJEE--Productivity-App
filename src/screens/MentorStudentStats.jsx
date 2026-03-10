@@ -1,7 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     FlatList,
     StatusBar,
     StyleSheet,
@@ -11,26 +12,62 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// --- MOCK DATA ---
-const MOCK_STATS = {
-    studentName: 'Rahul Kumar',
-    overview: {
-        totalHours: 142,
-        streak: 12,
-        completionRate: '85%'
-    },
-    recentReports: [
-        { id: '1', date: 'Mar 07', hours: 6, tasks: 'Completed Mechanics' },
-        { id: '2', date: 'Mar 06', hours: 5.5, tasks: 'Organic Chemistry' },
-        { id: '3', date: 'Mar 05', hours: 7, tasks: 'Mock Test 1' },
-    ]
-};
+import api from '../api';
 
 const MentorStudentStats = () => {
     const isDarkMode = useColorScheme() === 'dark';
     const router = useRouter();
-    const [stats, setStats] = useState(MOCK_STATS);
+    const { studentId } = useLocalSearchParams();
+    const [stats, setStats] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStudentStats = async () => {
+            try {
+                if (!studentId) {
+                    setStats(null);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const response = await api.get(`/api/mentor/stats/${studentId}`);
+                const { student, reports = [], timetables = [] } = response.data;
+
+                let totalHrs = 0;
+                reports.forEach(r => {
+                    const h = r.hours || {};
+                    totalHrs += (parseFloat(h.physics) || 0) + (parseFloat(h.chemistry) || 0) + (parseFloat(h.math) || 0) + (parseFloat(h.biology) || 0);
+                });
+
+                const recent = reports.slice(0, 5).map(r => {
+                    const h = r.hours || {};
+                    const hrs = (parseFloat(h.physics) || 0) + (parseFloat(h.chemistry) || 0) + (parseFloat(h.math) || 0) + (parseFloat(h.biology) || 0);
+                    return {
+                        id: r._id,
+                        date: new Date(r.date).toLocaleDateString(),
+                        hours: hrs,
+                        tasks: r.tasksCompleted
+                    };
+                });
+
+                setStats({
+                    studentName: student?.name || 'Student',
+                    overview: {
+                        totalHours: totalHrs,
+                        streak: timetables.length,
+                        completionRate: 'N/A'
+                    },
+                    recentReports: recent
+                });
+            } catch (error) {
+                console.error('Error fetching student stats:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStudentStats();
+    }, [studentId]);
 
     const theme = {
         background: isDarkMode ? '#0F172A' : '#F3F4F6',
@@ -58,6 +95,36 @@ const MentorStudentStats = () => {
         </View>
     );
 
+    if (isLoading) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.primaryBlue} />
+                <Text style={{ color: theme.textSub, marginTop: 12 }}>Loading Student Data...</Text>
+            </SafeAreaView>
+        );
+    }
+
+    if (!stats) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={theme.textMain} />
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: theme.textMain }]}>Student Stats</Text>
+                </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <Ionicons name="search" size={48} color={theme.textSub} style={{ marginBottom: 16 }} />
+                    <Text style={{ color: theme.textMain, fontSize: 18, fontWeight: 'bold' }}>No Data Found</Text>
+                    <Text style={{ color: theme.textSub, textAlign: 'center', marginTop: 8 }}>
+                        No data available for this student yet. They need to submit daily reports first.
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.background} />
@@ -76,7 +143,7 @@ const MentorStudentStats = () => {
                         <Text style={[styles.avatarText, { color: theme.primaryBlue }]}>{stats.studentName.charAt(0)}</Text>
                     </View>
                     <Text style={[styles.studentName, { color: theme.textMain }]}>{stats.studentName}</Text>
-                    <Text style={[styles.studentEmail, { color: theme.textSub }]}>Monitoring since Feb 2026</Text>
+                    <Text style={[styles.studentEmail, { color: theme.textSub }]}>Overview analytics</Text>
                 </View>
 
                 {/* STATS CARDS */}
@@ -89,7 +156,7 @@ const MentorStudentStats = () => {
                     <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.borderColor }]}>
                         <MaterialCommunityIcons name="fire" size={20} color={theme.accentOrange} />
                         <Text style={[styles.statValue, { color: theme.textMain }]}>{stats.overview.streak}</Text>
-                        <Text style={[styles.statLabel, { color: theme.textSub }]}>Day Streak</Text>
+                        <Text style={[styles.statLabel, { color: theme.textSub }]}>Days Active</Text>
                     </View>
                     <View style={[styles.statBox, { backgroundColor: theme.cardBg, borderColor: theme.borderColor }]}>
                         <MaterialCommunityIcons name="check-decagram" size={20} color={theme.accentGreen} />
@@ -101,12 +168,16 @@ const MentorStudentStats = () => {
                 {/* RECENT HISTORY */}
                 <View style={[styles.recentSection, { backgroundColor: theme.cardBg, borderColor: theme.borderColor }]}>
                     <Text style={[styles.sectionTitle, { color: theme.textMain }]}>Recent Reports</Text>
-                    <FlatList
-                        data={stats.recentReports}
-                        keyExtractor={item => item.id}
-                        renderItem={renderReportItem}
-                        showsVerticalScrollIndicator={false}
-                    />
+                    {stats.recentReports.length > 0 ? (
+                        <FlatList
+                            data={stats.recentReports}
+                            keyExtractor={item => item.id}
+                            renderItem={renderReportItem}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    ) : (
+                        <Text style={{ color: theme.textSub, textAlign: 'center', marginTop: 20 }}>No reports submitted yet.</Text>
+                    )}
                 </View>
             </View>
         </SafeAreaView>

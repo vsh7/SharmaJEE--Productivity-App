@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -13,6 +14,8 @@ import {
   useColorScheme,
   View
 } from 'react-native';
+import api from '../api';
+import { registerForPushNotifications } from '../notifications';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -20,10 +23,65 @@ const LoginScreen = () => {
 
   // 1. New State for Toggle
   const [userType, setUserType] = useState('student');
+  const [isLoading, setIsLoading] = useState(false);
 
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const router = useRouter();
+
+  const handleLogin = async () => {
+    if (!email || !password) return;
+
+    setIsLoading(true);
+    try {
+      // Create user data object
+      const nameFromEmail = email.split('@')[0];
+      const userData = {
+        name: nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1),
+        email,
+        password,
+        role: userType // 'student' or 'mentor'
+      };
+
+      // We'll try login first. If login fails, we try signup as fallback.
+      // Alternatively, the user can just be given Login/Signup functionality separately.
+      let response;
+      try {
+        response = await api.post('/auth/login', userData);
+      } catch (loginError) {
+        // Simple fallback: If user doesn't exist, sign them up
+        if (loginError.response && loginError.response.status === 400 && loginError.response.data.message === "Invalid password") {
+          // Invalid password
+          throw loginError;
+        }
+
+        // If the error means "user not found", sign them up
+        response = await api.post('/auth/signup', userData);
+      }
+
+      if (response && response.data && response.data.token) {
+        await AsyncStorage.setItem('userToken', response.data.token);
+
+        // Save user detials for dashboards if needed
+        await AsyncStorage.setItem('userRole', userType);
+
+        // Register push notification token
+        registerForPushNotifications();
+
+        if (userType === 'mentor') {
+          router.replace('/mentor/dashboard');
+        } else {
+          router.replace('/dashboard');
+        }
+      }
+    } catch (error) {
+      console.error("Auth Error:", error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || error.message || "Authentication failed. Please try again.";
+      alert(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const theme = {
     mainBg: isDarkMode ? '#111827' : '#FFFFFF',
@@ -152,16 +210,13 @@ const LoginScreen = () => {
             />
 
             <TouchableOpacity
-              style={[styles.primaryButton, { backgroundColor: theme.btnPrimaryBg }]}
-              onPress={() => {
-                if (userType === 'mentor') {
-                  router.replace('/mentor/dashboard');
-                } else {
-                  router.replace('/dashboard');
-                }
-              }}
+              style={[styles.primaryButton, { backgroundColor: theme.btnPrimaryBg, opacity: isLoading ? 0.7 : 1 }]}
+              onPress={handleLogin}
+              disabled={isLoading}
             >
-              <Text style={[styles.primaryButtonText, { color: theme.btnPrimaryText }]}>Continue</Text>
+              <Text style={[styles.primaryButtonText, { color: theme.btnPrimaryText }]}>
+                {isLoading ? 'Loading...' : 'Continue'}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.dividerContainer}>

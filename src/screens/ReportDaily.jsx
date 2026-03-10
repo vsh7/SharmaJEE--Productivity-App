@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import api from '../api';
 
 const ReportWorkScreen = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -29,6 +30,34 @@ const ReportWorkScreen = () => {
   const [tasks, setTasks] = useState('');
   const [notes, setNotes] = useState('');
   const [totalHours, setTotalHours] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (totalHours === 0) {
+      alert("Please enter hours dedicated today.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const reportData = {
+        date: new Date().toISOString(),
+        hours: hours,
+        totalHours: totalHours,
+        tasksCompleted: tasks,
+        notes: notes
+      };
+
+      await api.post('/api/reports/submit', reportData);
+      alert('Daily report submitted successfully!');
+      router.back();
+    } catch (error) {
+      console.error('Submit report error:', error);
+      alert(error.response?.data?.msg || 'Failed to submit report. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // --- THEME CONFIGURATION ---
   const theme = {
@@ -195,12 +224,13 @@ const ReportWorkScreen = () => {
 
           {/* SUBMIT BUTTON */}
           <TouchableOpacity
-            style={[styles.submitBtn, { backgroundColor: theme.primaryGreen }]}
+            style={[styles.submitBtn, { backgroundColor: isLoading ? '#9CA3AF' : theme.primaryGreen }]}
             activeOpacity={0.8}
-            onPress={() => console.log("Submit Report")}
+            onPress={handleSubmit}
+            disabled={isLoading}
           >
             <MaterialCommunityIcons name="send-check-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={styles.submitText}>Submit Daily Report</Text>
+            <Text style={styles.submitText}>{isLoading ? 'Saving...' : 'Submit Daily Report'}</Text>
           </TouchableOpacity>
 
           <View style={{ height: 40 }} />

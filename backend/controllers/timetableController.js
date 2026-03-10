@@ -54,7 +54,24 @@ const submitTimetable = async (req, res) => {
   }
 };
 
+/* ===============================
+   GET PAST TIMETABLES (HISTORY)
+   =============================== */
+const getPastTimetables = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const timetables = await Timetable.find({ student: studentId })
+      .sort({ date: -1 });
+
+    return res.status(200).json(timetables);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTodayTimetable,
   submitTimetable,
+  getPastTimetables,
 };

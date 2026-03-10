@@ -1,6 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -10,6 +13,7 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import api from '../api';
 
 const StudentDashboard = () => {
     // 1. Detect System Theme
@@ -41,11 +45,71 @@ const StudentDashboard = () => {
         iconBgRed: isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEF2F2',
     };
 
+    const handleLogout = async () => {
+        await AsyncStorage.multiRemove(['userToken', 'userRole']);
+        router.replace('/login');
+    };
+
     // Helper for Date
     const getTodayDate = () => {
         const date = new Date();
         return date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
     };
+
+    const [stats, setStats] = useState({
+        streak: 0,
+        hours: 0,
+        tasksDone: '0%',
+        reviews: 0,
+        name: 'Student'
+    });
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            setIsLoading(true);
+
+            // Basic data fetch - in a real app this would be a single aggregated endpoint
+            const timetablesRes = await api.get('/student/timetable/history');
+            const reportsRes = await api.get('/api/reports/history');
+
+            const feedbackRes = await api.get('/api/feedback/my-feedback');
+            const reviewsCount = feedbackRes.data ? feedbackRes.data.length : 0;
+
+            let totalHours = 0;
+            if (reportsRes.data) {
+                reportsRes.data.forEach(r => {
+                    const h = r.hours || {};
+                    totalHours += (parseFloat(h.physics) || 0) + (parseFloat(h.chemistry) || 0) + (parseFloat(h.math) || 0) + (parseFloat(h.biology) || 0);
+                });
+            }
+
+            setStats({
+                streak: timetablesRes.data ? timetablesRes.data.length : 0,
+                hours: totalHours,
+                tasksDone: 'N/A', // Needs deeper calculation
+                reviews: reviewsCount,
+                name: 'Student' // To get real name we'd need a /me endpoint
+            });
+
+        } catch (error) {
+            console.error('Error fetching dashboard stats:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.accentBlue} />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -55,10 +119,10 @@ const StudentDashboard = () => {
             <View style={styles.header}>
                 <View>
                     <Text style={[styles.dateText, { color: theme.textSub }]}>{getTodayDate()}</Text>
-                    <Text style={[styles.welcomeText, { color: theme.textMain }]}>Welcome back, Rahul!</Text>
+                    <Text style={[styles.welcomeText, { color: theme.textMain }]}>Welcome back!</Text>
                 </View>
-                <TouchableOpacity style={[styles.profileBtn, { backgroundColor: theme.cardBg }]}>
-                    <Ionicons name="person" size={20} color={theme.textMain} />
+                <TouchableOpacity style={[styles.profileBtn, { backgroundColor: theme.cardBg }]} onPress={handleLogout}>
+                    <Ionicons name="log-out-outline" size={20} color={theme.textMain} />
                 </TouchableOpacity>
             </View>
 
@@ -69,15 +133,15 @@ const StudentDashboard = () => {
                 <View style={styles.statsGrid}>
                     <StatCard
                         label="Day Streak"
-                        value="12"
+                        value={String(stats.streak)}
                         icon="fire"
                         color={theme.accentRed}
                         bg={theme.iconBgRed}
                         theme={theme}
                     />
                     <StatCard
-                        label="Hours This Week"
-                        value="48"
+                        label="Total Hours"
+                        value={String(stats.hours)}
                         icon="clock-time-four"
                         color={theme.accentOrange}
                         bg={theme.iconBgOrange}
@@ -85,7 +149,7 @@ const StudentDashboard = () => {
                     />
                     <StatCard
                         label="Tasks Done"
-                        value="85%"
+                        value={stats.tasksDone}
                         icon="check-circle"
                         color={theme.accentGreen}
                         bg={theme.iconBgGreen}
@@ -93,7 +157,7 @@ const StudentDashboard = () => {
                     />
                     <StatCard
                         label="New Reviews"
-                        value="3"
+                        value={String(stats.reviews)}
                         icon="message-text"
                         color={theme.accentBlue}
                         bg={theme.iconBgBlue}
@@ -131,7 +195,7 @@ const StudentDashboard = () => {
                     iconColor={theme.accentBlue}
                     iconBg={theme.iconBgBlue}
                     theme={theme}
-                    onPress={() => console.log('Go to History')}
+                    onPress={() => router.push('/past-timetables')}
                 />
 
                 <ActionCard
@@ -141,7 +205,7 @@ const StudentDashboard = () => {
                     iconColor="#8B5CF6" // Purple for distinction
                     iconBg={isDarkMode ? 'rgba(139, 92, 246, 0.2)' : '#F5F3FF'}
                     theme={theme}
-                    onPress={() => console.log('Go to Reviews')}
+                    onPress={() => router.push('/mentor-reviews')}
                 />
 
                 <View style={{ height: 40 }} />

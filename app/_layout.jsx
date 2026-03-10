@@ -16,8 +16,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     const setRootBackgroundColor = async () => {
-      // Set the root view background color to match the theme
-      // This prevents white flashes during navigation transitions
       const backgroundColor = colorScheme === 'dark' ? '#0F172A' : '#F3F4F6';
       await SystemUI.setBackgroundColorAsync(backgroundColor);
     };

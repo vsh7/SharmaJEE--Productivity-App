@@ -24,6 +24,10 @@ const UserSchema= mongoose.Schema({
     enum :["student","mentor"],
     required : true,
 
+  },
+  expoPushToken: {
+    type: String,
+    default: null,
   }
 },{timestamps : true});
 module.exports =mongoose.model("User",UserSchema);

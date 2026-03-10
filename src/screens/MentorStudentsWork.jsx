@@ -1,9 +1,10 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     FlatList,
     Modal,
+    Platform,
     StatusBar,
     StyleSheet,
     Text,
@@ -13,39 +14,33 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// --- MOCK DATA ---
-const INITIAL_REPORTS = [
-    {
-        id: '1',
-        studentName: 'Rahul Kumar',
-        date: '2026-03-07',
-        hours: { physics: 2, chemistry: 1, math: 3, biology: 0 },
-        totalHours: 6,
-        tasksCompleted: 'Solved 50 mechanics problems and 1 mock test.',
-        notes: 'Struggling with rotational motion concepts.',
-        hasFeedback: false
-    },
-    {
-        id: '2',
-        studentName: 'Priya Sharma',
-        date: '2026-03-07',
-        hours: { physics: 1.5, chemistry: 2, math: 0, biology: 3 },
-        totalHours: 6.5,
-        tasksCompleted: 'Revised organic chemistry naming conventions.',
-        notes: '',
-        hasFeedback: true
-    }
-];
+import api from '../api';
 
 const MentorStudentsWork = () => {
     const isDarkMode = useColorScheme() === 'dark';
     const router = useRouter();
 
-    const [reports, setReports] = useState(INITIAL_REPORTS);
+    const [reports, setReports] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
     const [feedbackText, setFeedbackText] = useState('');
     const [isModalVisible, setModalVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        fetchReports();
+    }, []);
+
+    const fetchReports = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/api/mentor/work');
+            setReports(response.data || []);
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const theme = {
         background: isDarkMode ? '#0F172A' : '#F3F4F6',
@@ -65,66 +60,85 @@ const MentorStudentsWork = () => {
         setModalVisible(true);
     };
 
-    const submitFeedback = () => {
-        // In a real app, API call goes here
-        const updatedReports = reports.map(r =>
-            r.id === selectedReport.id ? { ...r, hasFeedback: true } : r
-        );
-        setReports(updatedReports);
-        setModalVisible(false);
+    const submitFeedback = async () => {
+        if (!feedbackText.trim() || !selectedReport) return;
+        try {
+            setIsLoading(true);
+            await api.post('/api/mentor/feedback', {
+                studentId: selectedReport.student._id,
+                dailyReportId: selectedReport._id,
+                comments: feedbackText
+            });
+            alert('Feedback submitted successfully!');
+            fetchReports(); // Refresh the list
+            setModalVisible(false);
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            alert('Failed to submit feedback.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const renderReportCard = ({ item }) => (
-        <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.borderColor }]}>
+    const renderReportCard = ({ item }) => {
+        const studentName = item.student?.name || 'Unknown Student';
 
-            {/* HEADER */}
-            <View style={styles.cardHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={[styles.avatar, { backgroundColor: theme.primaryBlue + '20' }]}>
-                        <Text style={[styles.avatarText, { color: theme.primaryBlue }]}>{item.studentName.charAt(0)}</Text>
-                    </View>
-                    <View>
-                        <Text style={[styles.studentName, { color: theme.textMain }]}>{item.studentName}</Text>
-                        <Text style={[styles.dateText, { color: theme.textSub }]}>{item.date}</Text>
-                    </View>
-                </View>
-                <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
-                    <Text style={[styles.badgeText, { color: theme.primaryBlue }]}>{item.totalHours} hrs</Text>
-                </View>
-            </View>
+        // Calculate total hours
+        const h = item.hours || {};
+        const total = (parseFloat(h.physics) || 0) + (parseFloat(h.chemistry) || 0) + (parseFloat(h.math) || 0) + (parseFloat(h.biology) || 0);
 
-            <View style={[styles.divider, { backgroundColor: theme.borderColor }]} />
+        return (
+            <View style={[styles.card, { backgroundColor: theme.cardBg, borderColor: theme.borderColor }]}>
 
-            {/* CONTENT */}
-            <Text style={[styles.sectionLabel, { color: theme.textSub }]}>Tasks Completed</Text>
-            <Text style={[styles.contentText, { color: theme.textMain }]}>{item.tasksCompleted}</Text>
-
-            {item.notes ? (
-                <>
-                    <Text style={[styles.sectionLabel, { color: theme.textSub, marginTop: 12 }]}>Student Notes</Text>
-                    <Text style={[styles.contentText, { color: theme.textSub, fontStyle: 'italic' }]}>"{item.notes}"</Text>
-                </>
-            ) : null}
-
-            {/* ACTIONS */}
-            <View style={{ marginTop: 20 }}>
-                {item.hasFeedback ? (
-                    <View style={styles.feedbackGivenContainer}>
-                        <MaterialCommunityIcons name="check-circle" size={16} color={theme.primaryGreen} />
-                        <Text style={[styles.feedbackGivenText, { color: theme.primaryGreen }]}>Feedback Submitted</Text>
-                    </View>
-                ) : (
-                    <TouchableOpacity
-                        style={[styles.feedbackBtn, { backgroundColor: theme.primaryBlue }]}
-                        onPress={() => openFeedbackModal(item)}
-                    >
-                        <MaterialCommunityIcons name="comment-plus-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                        <Text style={styles.feedbackBtnText}>Give Feedback</Text>
+                {/* HEADER */}
+                <View style={styles.cardHeader}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }} onPress={() => router.push(`/mentor/student-stats?studentId=${item.student?._id}`)}>
+                        <View style={[styles.avatar, { backgroundColor: theme.primaryBlue + '20' }]}>
+                            <Text style={[styles.avatarText, { color: theme.primaryBlue }]}>{studentName.charAt(0)}</Text>
+                        </View>
+                        <View>
+                            <Text style={[styles.studentName, { color: theme.textMain }]}>{studentName}</Text>
+                            <Text style={[styles.dateText, { color: theme.textSub }]}>{new Date(item.date).toLocaleDateString()}</Text>
+                        </View>
                     </TouchableOpacity>
-                )}
+                    <View style={[styles.badge, { backgroundColor: theme.badgeBg }]}>
+                        <Text style={[styles.badgeText, { color: theme.primaryBlue }]}>{total} hrs</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: theme.borderColor }]} />
+
+                {/* CONTENT */}
+                <Text style={[styles.sectionLabel, { color: theme.textSub }]}>Tasks Completed</Text>
+                <Text style={[styles.contentText, { color: theme.textMain }]}>{item.tasksCompleted}</Text>
+
+                {item.notes ? (
+                    <>
+                        <Text style={[styles.sectionLabel, { color: theme.textSub, marginTop: 12 }]}>Student Notes</Text>
+                        <Text style={[styles.contentText, { color: theme.textSub, fontStyle: 'italic' }]}>"{item.notes}"</Text>
+                    </>
+                ) : null}
+
+                {/* ACTIONS */}
+                <View style={{ marginTop: 20 }}>
+                    {item.hasFeedback ? (
+                        <View style={styles.feedbackGivenContainer}>
+                            <MaterialCommunityIcons name="check-circle" size={16} color={theme.primaryGreen} />
+                            <Text style={[styles.feedbackGivenText, { color: theme.primaryGreen }]}>Feedback Submitted</Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={[styles.feedbackBtn, { backgroundColor: theme.primaryBlue }]}
+                            onPress={() => openFeedbackModal(item)}
+                        >
+                            <MaterialCommunityIcons name="comment-plus-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                            <Text style={styles.feedbackBtnText}>Give Feedback</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -139,7 +153,7 @@ const MentorStudentsWork = () => {
 
             <FlatList
                 data={reports}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item._id}
                 renderItem={renderReportCard}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}

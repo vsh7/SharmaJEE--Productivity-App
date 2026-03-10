@@ -6,6 +6,7 @@ const {
     getAllStudentsTimetables,
     giveFeedback,
     getStudentStats,
+    getMentorOverview,
 } = require("../controllers/mentorController");
 
 const router = express.Router();
@@ -31,5 +32,9 @@ router.post("/feedback", giveFeedback);
 // @route   GET /api/mentor/stats/:studentId
 // @desc    Get specific student's aggregate stats (reports, timetables, feedback)
 router.get("/stats/:studentId", getStudentStats);
+
+// @route   GET /api/mentor/overview
+// @desc    Get aggregated overview stats for mentor dashboard
+router.get("/overview", getMentorOverview);
 
 module.exports = router;
