@@ -8,6 +8,35 @@ const submitDailyReport = async (req, res) => {
         const studentId = req.user.id;
         const { date, hours, totalHours, tasksCompleted, notes } = req.body;
 
+        // Validation: Check each subject's hours
+        const subjects = ['physics', 'chemistry', 'math', 'biology'];
+        for (const subject of subjects) {
+            const subjectHours = parseFloat(hours[subject]) || 0;
+            if (subjectHours > 24) {
+                return res.status(400).json({
+                    message: `${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot exceed 24 hours per day!`
+                });
+            }
+            if (subjectHours < 0) {
+                return res.status(400).json({
+                    message: `${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot be negative!`
+                });
+            }
+        }
+
+        // Validation: Check total hours
+        if (totalHours > 24) {
+            return res.status(400).json({
+                message: "Total study hours cannot exceed 24 hours per day!"
+            });
+        }
+
+        if (totalHours < 0) {
+            return res.status(400).json({
+                message: "Total hours cannot be negative!"
+            });
+        }
+
         const normalizedDate = new Date(date);
         normalizedDate.setHours(0, 0, 0, 0);
 

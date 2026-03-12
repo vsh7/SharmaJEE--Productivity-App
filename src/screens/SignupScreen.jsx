@@ -17,30 +17,51 @@ import {
 import api from '../api';
 import { registerForPushNotifications } from '../notifications';
 
-const LoginScreen = () => {
+const SignupScreen = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [userType, setUserType] = useState('student');
   const [isLoading, setIsLoading] = useState(false);
 
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
+  const handleSignup = async () => {
+    // Validation
+    if (!name || !email || !password || !confirmPassword) {
       alert('Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters long');
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const userData = {
+        name,
+        email,
+        password,
+        role: userType
+      };
+
+      const response = await api.post('/auth/signup', userData);
 
       if (response && response.data && response.data.token) {
         await AsyncStorage.setItem('userToken', response.data.token);
 
         // Get user role from response
-        const userRole = response.data.user?.role || 'student';
+        const userRole = response.data.user?.role || userType;
         await AsyncStorage.setItem('userRole', userRole);
 
         // Register push notification token
@@ -53,8 +74,8 @@ const LoginScreen = () => {
         }
       }
     } catch (error) {
-      console.error("Login Error:", error.response?.data || error.message);
-      const errorMsg = error.response?.data?.message || error.message || "Login failed. Please try again.";
+      console.error("Signup Error:", error.response?.data || error.message);
+      const errorMsg = error.response?.data?.message || error.message || "Signup failed. Please try again.";
       alert(errorMsg);
     } finally {
       setIsLoading(false);
@@ -63,7 +84,7 @@ const LoginScreen = () => {
 
   const theme = {
     mainBg: isDarkMode ? '#111827' : '#FFFFFF',
-    headerBg: isDarkMode ? '#0F172A' : '#172554', // Your Blue
+    headerBg: isDarkMode ? '#0F172A' : '#172554',
     cardBg: isDarkMode ? '#1F2937' : '#FFFFFF',
     textPrimary: isDarkMode ? '#FFFFFF' : '#000000',
     textSecondary: isDarkMode ? '#9CA3AF' : '#6B7280',
@@ -79,22 +100,15 @@ const LoginScreen = () => {
   };
 
   return (
-    // FIX 2: Set root background to theme.cardBg (White/Gray)
-    // This ensures that when the keyboard pushes content up, the bottom area remains white, not blue.
     <View style={[styles.mainContainer, { backgroundColor: theme.cardBg }]}>
-
       <StatusBar barStyle="light-content" backgroundColor={theme.headerBg} />
 
-      {/* Absolute Blue Header - Keeps your design intact */}
       <View style={[styles.blueHeaderBackground, { backgroundColor: theme.headerBg }]} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        // Using 'padding' for iOS and 'height' for Android usually gives the best "no hide" result
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-
-        {/* Logo and App Name (Kept EXACTLY as provided) */}
         <View style={styles.headerContainer}>
           <View style={styles.logoContainer}>
             <Image
@@ -106,15 +120,70 @@ const LoginScreen = () => {
           <Text style={styles.brandText}>SharmaJEE Productivity</Text>
         </View>
 
-        {/* Form Section */}
         <View style={[styles.contentContainer, { backgroundColor: theme.cardBg }]}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={[styles.heading, { color: theme.textPrimary }]}>Welcome back</Text>
-            <Text style={[styles.subHeading, { color: theme.textSecondary }]}>Enter your email to login</Text>
+            <Text style={[styles.heading, { color: theme.textPrimary }]}>Create an account</Text>
+            <Text style={[styles.subHeading, { color: theme.textSecondary }]}>Enter your details to sign up</Text>
+
+            {/* User Type Toggle */}
+            <Text style={[styles.label, { color: theme.textSecondary }]}>I am a</Text>
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  userType === 'student'
+                    ? { backgroundColor: theme.headerBg, borderColor: theme.headerBg }
+                    : { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }
+                ]}
+                onPress={() => setUserType('student')}
+                activeOpacity={0.8}
+              >
+                <Text style={[
+                  styles.toggleText,
+                  userType === 'student' ? { color: '#FFFFFF' } : { color: theme.textPrimary }
+                ]}>
+                  Student
+                </Text>
+              </TouchableOpacity>
+
+              <View style={{ width: 12 }} />
+
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  userType === 'mentor'
+                    ? { backgroundColor: theme.headerBg, borderColor: theme.headerBg }
+                    : { backgroundColor: theme.inputBg, borderColor: theme.inputBorder }
+                ]}
+                onPress={() => setUserType('mentor')}
+                activeOpacity={0.8}
+              >
+                <Text style={[
+                  styles.toggleText,
+                  userType === 'mentor' ? { color: '#FFFFFF' } : { color: theme.textPrimary }
+                ]}>
+                  Mentor
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Name Input */}
+            <TextInput
+              placeholder='Enter your full name'
+              placeholderTextColor={theme.placeholder}
+              style={[styles.input, {
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+                color: theme.textPrimary
+              }]}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
 
             {/* Email Input */}
             <TextInput
@@ -145,23 +214,37 @@ const LoginScreen = () => {
               onChangeText={setPassword}
             />
 
+            {/* Confirm Password Input */}
+            <TextInput
+              style={[styles.input, {
+                backgroundColor: theme.inputBg,
+                borderColor: theme.inputBorder,
+                color: theme.textPrimary
+              }]}
+              placeholder='Confirm your password'
+              placeholderTextColor={theme.placeholder}
+              secureTextEntry={true}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+
             <TouchableOpacity
               style={[styles.primaryButton, { backgroundColor: theme.btnPrimaryBg, opacity: isLoading ? 0.7 : 1 }]}
-              onPress={handleLogin}
+              onPress={handleSignup}
               disabled={isLoading}
             >
               <Text style={[styles.primaryButtonText, { color: theme.btnPrimaryText }]}>
-                {isLoading ? 'Logging in...' : 'Login'}
+                {isLoading ? 'Creating Account...' : 'Sign Up'}
               </Text>
             </TouchableOpacity>
 
-            {/* Signup Link */}
+            {/* Login Link */}
             <TouchableOpacity
               style={styles.linkContainer}
-              onPress={() => router.push('/signup')}
+              onPress={() => router.push('/login')}
             >
               <Text style={[styles.linkText, { color: theme.textSecondary }]}>
-                Don't have an account? <Text style={[styles.linkTextBold, { color: theme.headerBg }]}>Sign Up</Text>
+                Already have an account? <Text style={[styles.linkTextBold, { color: theme.headerBg }]}>Login</Text>
               </Text>
             </TouchableOpacity>
 
@@ -179,7 +262,7 @@ const LoginScreen = () => {
             </TouchableOpacity>
 
             <Text style={styles.footerText}>
-              By clicking continue you agree to our Terms of Service and Privacy Policy
+              By clicking sign up you agree to our Terms of Service and Privacy Policy
             </Text>
 
           </ScrollView>
@@ -190,7 +273,7 @@ const LoginScreen = () => {
   );
 }
 
-export default LoginScreen;
+export default SignupScreen;
 
 const styles = StyleSheet.create({
   mainContainer: {
@@ -208,7 +291,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 110, // Kept exactly as provided
+    paddingTop: 110,
     paddingBottom: 60,
   },
 
@@ -265,7 +348,32 @@ const styles = StyleSheet.create({
 
   subHeading: {
     fontSize: 15,
+    marginBottom: 20,
+  },
+
+  label: {
+    fontSize: 14,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+
+  toggleContainer: {
+    flexDirection: 'row',
     marginBottom: 24,
+  },
+
+  toggleButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+
+  toggleText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 
   input: {
@@ -309,10 +417,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+
   dividerLine: {
     flex: 1,
     height: 1,
   },
+
   orText: {
     marginHorizontal: 10,
     fontSize: 14,
@@ -326,6 +436,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   socialText: {
     fontSize: 16,
     fontWeight: "600",

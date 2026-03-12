@@ -38,6 +38,12 @@ const ReportWorkScreen = () => {
       return;
     }
 
+    // Validate: Total hours cannot exceed 24 hours
+    if (totalHours > 24) {
+      alert("Total study hours cannot exceed 24 hours per day! Please adjust your entries.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const reportData = {
@@ -85,6 +91,14 @@ const ReportWorkScreen = () => {
   const handleHourChange = (subject, value) => {
     // Only allow numbers
     if (/^\d*\.?\d*$/.test(value)) {
+      const numValue = parseFloat(value) || 0;
+
+      // Validate: Each subject cannot exceed 24 hours
+      if (numValue > 24) {
+        alert(`${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot exceed 24 hours per day!`);
+        return;
+      }
+
       setHours(prev => ({ ...prev, [subject]: value }));
     }
   };
@@ -184,7 +198,19 @@ const ReportWorkScreen = () => {
             {/* Total Display */}
             <View style={[styles.totalBox, { backgroundColor: theme.inputBg }]}>
               <Text style={[styles.totalLabel, { color: theme.textSub }]}>Total Hours Today</Text>
-              <Text style={[styles.totalValue, { color: theme.primaryGreen }]}>{totalHours}</Text>
+              <Text style={[styles.totalValue, {
+                color: totalHours > 24 ? '#EF4444' : totalHours > 20 ? '#F59E0B' : theme.primaryGreen
+              }]}>{totalHours.toFixed(1)}</Text>
+              {totalHours > 24 && (
+                <Text style={[styles.warningText, { color: '#EF4444' }]}>
+                  ⚠️ Exceeds 24 hours limit!
+                </Text>
+              )}
+              {totalHours > 20 && totalHours <= 24 && (
+                <Text style={[styles.warningText, { color: '#F59E0B' }]}>
+                  ⚡ Approaching 24 hours limit
+                </Text>
+              )}
             </View>
           </View>
 
@@ -376,6 +402,11 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 32,
     fontWeight: 'bold',
+  },
+  warningText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 8,
   },
 
   // Text Areas
