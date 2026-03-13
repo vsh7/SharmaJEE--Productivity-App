@@ -208,6 +208,16 @@ const StudentDashboard = () => {
                     onPress={() => router.push('/mentor-reviews')}
                 />
 
+                <ActionCard
+                    title="AI Study Insights"
+                    subtitle="Get personalized AI recommendations"
+                    icon="robot-excited-outline"
+                    iconColor="#EC4899" // Pink for AI
+                    iconBg={isDarkMode ? 'rgba(236, 72, 153, 0.2)' : '#FCE7F3'}
+                    theme={theme}
+                    onPress={() => router.push('/ai-insights')}
+                />
+
                 <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>

@@ -28,6 +28,9 @@ app.use("/api/notifications", require("./routes/notificationRoutes"));
 // Mentor Routes
 app.use("/api/mentor", require("./routes/mentorRoutes"));
 
+// AI Routes
+app.use("/api/ai", require("./routes/aiRoutes"));
+
 // Start cron jobs for reminders
 startCronJobs();
 
