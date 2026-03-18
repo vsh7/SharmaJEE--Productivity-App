@@ -1,50 +1,185 @@
-# Welcome to your Expo app 👋
+# JEE/NEET Student Productivity App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A full-stack productivity application designed specifically for JEE and NEET students to track their study progress, manage timetables, and receive AI-powered study suggestions.
 
-## Get started
+## Project Structure
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+productivity-app/
+├── frontend/           # React Native + Expo mobile app
+│   ├── app/           # Expo Router pages
+│   ├── components/    # Reusable UI components
+│   ├── hooks/         # Custom React hooks
+│   ├── assets/        # Images, fonts, etc.
+│   ├── constants/     # App constants
+│   ├── src/           # Source utilities
+│   └── package.json   # Frontend dependencies
+│
+├── backend/           # Node.js + Express API
+│   ├── config/        # Database and config
+│   ├── controllers/   # Route controllers
+│   ├── models/        # Mongoose models
+│   ├── routes/        # API routes
+│   ├── middleware/    # Auth, rate limiting, etc.
+│   ├── services/      # Business logic
+│   ├── utils/         # Utilities (cron jobs, notifications)
+│   ├── server.js      # Entry point
+│   └── package.json   # Backend dependencies
+│
+└── package.json       # Root scripts for managing both apps
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Features
 
-## Learn more
+### For Students:
+- **Daily Report Tracking**: Log study hours for Physics, Chemistry, Math, and Biology
+- **Timetable Management**: Create and track daily study schedules
+- **AI Study Suggestions**: Get personalized study recommendations powered by Google Gemini AI
+- **Performance Analytics**: View detailed statistics and patterns
+- **Push Notifications**: Reminders for timetable (2 PM) and daily reports (9 PM)
+- **Streak Tracking**: Maintain consistency with daily report streaks
 
-To learn more about developing your project with Expo, look at the following resources:
+### For Mentors:
+- **Student Dashboard**: Monitor all assigned students
+- **Performance Reports**: View detailed analytics for each student
+- **Report Management**: Access historical data and trends
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Tech Stack
 
-## Join the community
+### Frontend:
+- React Native + Expo
+- Expo Router (file-based routing)
+- AsyncStorage for local data
+- Expo Notifications
+- Axios for API calls
 
-Join our community of developers creating universal apps.
+### Backend:
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT Authentication
+- Google Gemini AI
+- Node-cron for scheduled tasks
+- Express-rate-limit for API protection
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Getting Started
+
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+- MongoDB instance
+- Expo CLI (`npm install -g expo-cli`)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd productivity-app
+   ```
+
+2. **Install all dependencies**
+   ```bash
+   npm run install-all
+   ```
+   This will install dependencies for root, frontend, and backend.
+
+3. **Set up environment variables**
+
+   Create `backend/.env`:
+   ```env
+   PORT=5000
+   MONGO_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   GEMINI_API_KEY=your_google_gemini_api_key
+   ```
+
+### Running the Application
+
+#### Run Both (Frontend + Backend) Concurrently:
+```bash
+npm run dev
+```
+
+#### Run Frontend Only:
+```bash
+npm run frontend
+# or for specific platform
+npm run frontend:android
+npm run frontend:ios
+npm run frontend:web
+```
+
+#### Run Backend Only:
+```bash
+npm run backend
+# or in development mode with auto-restart
+npm run backend:dev
+```
+
+## API Features
+
+### Rate Limiting:
+- **AI Suggestions**: 5 requests per 15 minutes
+- **General API**: 30 requests per minute
+- **Authentication**: 10 attempts per 15 minutes
+
+### Scheduled Notifications:
+- **2 PM IST**: Timetable reminder
+- **9 PM IST**: Daily report submission reminder
+
+### Authentication:
+All API routes are protected with JWT authentication. Students and mentors have role-based access control.
+
+## Development
+
+### Frontend Development:
+```bash
+cd frontend
+npm start
+```
+
+### Backend Development:
+```bash
+cd backend
+npm run dev
+```
+
+### Project Documentation:
+- Backend API Guide: `backend/BACKEND_GUIDE.md`
+- Project Completion Report: `PROJECT_COMPLETION_REPORT.md`
+
+## API Endpoints
+
+### Authentication:
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/login` - Login
+- `GET /api/auth/profile` - Get user profile
+
+### Daily Reports:
+- `POST /api/reports` - Submit daily report
+- `GET /api/reports` - Get student's reports
+- `GET /api/reports/mentor` - Get all students' reports (mentor only)
+
+### Timetables:
+- `POST /api/timetables` - Create/update timetable
+- `GET /api/timetables` - Get today's timetable
+- `GET /api/timetables/mentor` - Get all students' timetables (mentor only)
+
+### AI Suggestions:
+- `GET /api/ai/suggestions` - Get AI-powered study suggestions (rate-limited)
+- `GET /api/ai/stats` - Get quick analytics stats
+
+## Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Test thoroughly
+4. Submit a pull request
+
+## License
+
+ISC
+
+## Support
+
+For issues or questions, please open an issue on GitHub.
