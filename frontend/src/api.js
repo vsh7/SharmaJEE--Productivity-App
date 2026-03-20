@@ -2,12 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-// IMPORTANT: Update this IP address to match your computer's local IP
-// To find your IP: Run `ipconfig getifaddr en0` (Mac) or `ipconfig` (Windows)
-// Current IP: 10.118.143.215 (Updated: 2026-03-18)
-
-// Real LAN IP of this machine — physical devices connect via this
-const BASE_URL = 'http://10.118.143.215:3000';
+// Production backend URL - deployed on Render
+// For local development, use: http://10.118.143.215:3000 (or your local IP)
+const BASE_URL = 'https://productivity-app-a100.onrender.com';
 
 const api = axios.create({
     baseURL: BASE_URL,
