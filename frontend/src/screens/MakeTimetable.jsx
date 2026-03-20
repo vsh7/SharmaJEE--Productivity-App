@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   FlatList,
   Modal,
   Platform,
@@ -14,6 +15,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { v4 as uuidv4 } from 'uuid';
 import api from '../api';
 
 const MakeTimetableScreen = () => {
@@ -80,16 +82,16 @@ const MakeTimetableScreen = () => {
   const handleSaveTimetable = async () => {
     try {
       if (tasks.length === 0) {
-        alert("Please add at least one task");
+        Alert.alert("Validation Error", "Please add at least one task");
         return;
       }
       setIsLoading(true);
       await api.post('/student/timetable', { date: new Date().toISOString(), tasks });
-      alert("Timetable saved successfully!");
+      Alert.alert("Success", "Timetable saved successfully!");
       fetchTasks();
     } catch (error) {
       console.error('Error saving timetable:', error);
-      alert('Failed to save timetable');
+      Alert.alert("Error", "Failed to save timetable");
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +106,7 @@ const MakeTimetableScreen = () => {
   };
 
   const openEditModal = (task) => {
-    setEditingTaskId(task._id || Math.random().toString());
+    setEditingTaskId(task._id || task.id || uuidv4());
     setTaskTitle(task.title);
     setTaskTime(task.startTime || '');
     setTaskEndTime(task.endTime || '');
@@ -113,7 +115,7 @@ const MakeTimetableScreen = () => {
 
   const handleSaveTask = () => {
     if (!taskTitle || !taskTime) {
-      alert("Please fill in both fields");
+      Alert.alert("Validation Error", "Please fill in both fields");
       return;
     }
 
@@ -127,7 +129,7 @@ const MakeTimetableScreen = () => {
         startTime: taskTime,
         endTime: taskEndTime,
         isDone: false,
-        id: Math.random().toString() // temp ID
+        id: uuidv4()
       };
       setTasks([...tasks, newTask]);
     }
@@ -235,7 +237,7 @@ const MakeTimetableScreen = () => {
 
         <FlatList
           data={tasks}
-          keyExtractor={item => item._id || item.id || Math.random().toString()}
+          keyExtractor={item => item._id || item.id || uuidv4()}
           renderItem={renderTaskItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

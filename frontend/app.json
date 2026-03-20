@@ -7,6 +7,9 @@
     "scheme": "productivityapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "updates": {
+      "enabled": false
+    },
     "ios": {
       "supportsTablet": true,
       "userInterfaceStyle": "automatic"

@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -34,13 +35,13 @@ const ReportWorkScreen = () => {
 
   const handleSubmit = async () => {
     if (totalHours === 0) {
-      alert("Please enter hours dedicated today.");
+      Alert.alert("Validation Error", "Please enter hours dedicated today.");
       return;
     }
 
     // Validate: Total hours cannot exceed 24 hours
     if (totalHours > 24) {
-      alert("Total study hours cannot exceed 24 hours per day! Please adjust your entries.");
+      Alert.alert("Validation Error", "Total study hours cannot exceed 24 hours per day! Please adjust your entries.");
       return;
     }
 
@@ -55,11 +56,11 @@ const ReportWorkScreen = () => {
       };
 
       await api.post('/api/reports/submit', reportData);
-      alert('Daily report submitted successfully!');
+      Alert.alert('Success', 'Daily report submitted successfully!');
       router.back();
     } catch (error) {
       console.error('Submit report error:', error);
-      alert(error.response?.data?.msg || 'Failed to submit report. Please try again.');
+      Alert.alert('Error', error.response?.data?.msg || 'Failed to submit report. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +96,7 @@ const ReportWorkScreen = () => {
 
       // Validate: Each subject cannot exceed 24 hours
       if (numValue > 24) {
-        alert(`${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot exceed 24 hours per day!`);
+        Alert.alert("Validation Error", `${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot exceed 24 hours per day!`);
         return;
       }
 

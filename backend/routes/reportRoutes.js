@@ -1,5 +1,6 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
+const { reportValidation } = require("../middleware/validation");
 const {
     submitDailyReport,
     getTodayReport,
@@ -13,7 +14,7 @@ const router = express.Router();
 // @route   POST /api/reports/submit
 // @desc    Submit or update today's daily report
 // @access  Private (Student)
-router.post("/submit", protect, submitDailyReport);
+router.post("/submit", protect, reportValidation, submitDailyReport);
 
 // @route   GET /api/reports/today
 // @desc    Get today's daily report

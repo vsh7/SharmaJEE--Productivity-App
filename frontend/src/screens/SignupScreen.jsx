@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -32,17 +33,17 @@ const SignupScreen = () => {
   const handleSignup = async () => {
     // Validation
     if (!name || !email || !password || !confirmPassword) {
-      alert('Please fill in all fields');
+      Alert.alert('Validation Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      Alert.alert('Validation Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      alert('Password must be at least 6 characters long');
+      Alert.alert('Validation Error', 'Password must be at least 6 characters long');
       return;
     }
 
@@ -76,7 +77,7 @@ const SignupScreen = () => {
     } catch (error) {
       console.error("Signup Error:", error.response?.data || error.message);
       const errorMsg = error.response?.data?.message || error.message || "Signup failed. Please try again.";
-      alert(errorMsg);
+      Alert.alert('Error', errorMsg);
     } finally {
       setIsLoading(false);
     }

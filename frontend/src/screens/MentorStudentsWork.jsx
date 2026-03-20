@@ -2,6 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+    Alert,
     FlatList,
     Modal,
     Platform,
@@ -69,12 +70,12 @@ const MentorStudentsWork = () => {
                 dailyReportId: selectedReport._id,
                 comments: feedbackText
             });
-            alert('Feedback submitted successfully!');
+            Alert.alert('Success', 'Feedback submitted successfully!');
             fetchReports(); // Refresh the list
             setModalVisible(false);
         } catch (error) {
             console.error('Error submitting feedback:', error);
-            alert('Failed to submit feedback.');
+            Alert.alert('Error', 'Failed to submit feedback.');
         } finally {
             setIsLoading(false);
         }

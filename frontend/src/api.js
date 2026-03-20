@@ -6,17 +6,8 @@ import { Platform } from 'react-native';
 // To find your IP: Run `ipconfig getifaddr en0` (Mac) or `ipconfig` (Windows)
 // Current IP: 10.118.143.215 (Updated: 2026-03-18)
 
-const getBaseURL = () => {
-    if (Platform.OS === 'android') {
-        // Android emulator uses 10.0.2.2 to access host machine's localhost
-        return 'http://10.0.2.2:3000';
-    } else {
-        // For physical iOS devices and simulators, use your computer's local IP
-        return 'http://10.118.143.215:3000';
-    }
-};
-
-const BASE_URL = getBaseURL();
+// Real LAN IP of this machine — physical devices connect via this
+const BASE_URL = 'http://10.118.143.215:3000';
 
 const api = axios.create({
     baseURL: BASE_URL,

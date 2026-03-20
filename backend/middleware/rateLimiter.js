@@ -15,13 +15,8 @@ const aiRateLimiter = rateLimit({
         message: "Too many AI requests. Please try again in 15 minutes.",
         retryAfter: "15 minutes"
     },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    standardHeaders: 'draft-7', // Use draft-7 standard
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-
-    // Use user ID as the key (requires authentication middleware to run first)
-    keyGenerator: (req) => {
-        return req.user?.id || req.ip; // Fallback to IP if no user
-    },
 
     // Skip rate limiting for successful requests that return "not enough data"
     skip: (req, res) => {
@@ -49,11 +44,8 @@ const generalApiLimiter = rateLimit({
     message: {
         message: "Too many requests. Please slow down.",
     },
-    standardHeaders: true,
-    legacyHeaders: false,
-    keyGenerator: (req) => {
-        return req.user?.id || req.ip;
-    }
+    standardHeaders: 'draft-7',
+    legacyHeaders: false
 });
 
 /**
@@ -67,9 +59,9 @@ const authRateLimiter = rateLimit({
         message: "Too many authentication attempts. Please try again later.",
         retryAfter: "15 minutes"
     },
-    standardHeaders: true,
+    standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skipSuccessfulRequests: true, // Don't count successful logins
+    skipSuccessfulRequests: true // Don't count successful logins
 });
 
 module.exports = {

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const protect = require("../middleware/authMiddleware");
+const { timetableValidation } = require("../middleware/validation");
 const {
   getTodayTimetable,
   submitTimetable,
@@ -9,6 +10,6 @@ const {
 
 router.get("/today", protect, getTodayTimetable);
 router.get("/history", protect, getPastTimetables);
-router.post("/", protect, submitTimetable);
+router.post("/", protect, timetableValidation, submitTimetable);
 
 module.exports = router;

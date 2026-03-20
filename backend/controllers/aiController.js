@@ -41,7 +41,7 @@ const generateAISuggestions = async (req, res) => {
         // 5. Parse AI response into structured suggestions
         const suggestions = parseAISuggestions(aiText);
 
-        return res.status(200).json({
+        const aiResponse = {
             message: "AI suggestions generated successfully",
             suggestions,
             analytics: {
@@ -49,9 +49,15 @@ const generateAISuggestions = async (req, res) => {
                 consistency: analytics.consistency,
                 patterns: analytics.patterns,
                 subjectStats: analytics.subjectStats,
-            },
-            rawAI: aiText, // For debugging
-        });
+            }
+        };
+
+        // Only include raw AI output in development mode
+        if (process.env.NODE_ENV === 'development') {
+            aiResponse.rawAI = aiText;
+        }
+
+        return res.status(200).json(aiResponse);
 
     } catch (error) {
         console.error("AI Suggestion Error:", error);

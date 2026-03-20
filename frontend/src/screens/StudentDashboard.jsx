@@ -88,10 +88,26 @@ const StudentDashboard = () => {
                 });
             }
 
+            // Calculate tasks done percentage from today's timetable
+            let tasksDonePercent = 'N/A';
+            try {
+                const todayTimetableRes = await api.get('/student/timetable/today');
+                if (todayTimetableRes.data && todayTimetableRes.data.timetable && todayTimetableRes.data.timetable.tasks) {
+                    const tasks = todayTimetableRes.data.timetable.tasks;
+                    const totalTasks = tasks.length;
+                    const completedTasks = tasks.filter(t => t.isDone).length;
+                    if (totalTasks > 0) {
+                        tasksDonePercent = Math.round((completedTasks / totalTasks) * 100) + '%';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching today\'s timetable:', error);
+            }
+
             setStats({
                 streak: timetablesRes.data ? timetablesRes.data.length : 0,
                 hours: totalHours,
-                tasksDone: 'N/A', // Needs deeper calculation
+                tasksDone: tasksDonePercent,
                 reviews: reviewsCount,
                 name: 'Student' // To get real name we'd need a /me endpoint
             });

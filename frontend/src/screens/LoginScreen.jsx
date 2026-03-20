@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -28,7 +29,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert('Please fill in all fields');
+      Alert.alert('Validation Error', 'Please fill in all fields');
       return;
     }
 
@@ -55,7 +56,7 @@ const LoginScreen = () => {
     } catch (error) {
       console.error("Login Error:", error.response?.data || error.message);
       const errorMsg = error.response?.data?.message || error.message || "Login failed. Please try again.";
-      alert(errorMsg);
+      Alert.alert('Error', errorMsg);
     } finally {
       setIsLoading(false);
     }
