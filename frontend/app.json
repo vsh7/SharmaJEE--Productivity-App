@@ -23,7 +23,15 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "static"
+      "bundler": "metro",
+      "output": "static",
+      "build": {
+        "babel": {
+          "include": [
+            "react-native-reanimated"
+          ]
+        }
+      }
     },
     "plugins": [
       "expo-router",

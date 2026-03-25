@@ -4,11 +4,12 @@ import { Platform } from 'react-native';
 
 // Production backend URL - deployed on Render
 // For local development, use: http://10.118.143.215:3000 (or your local IP)
-const BASE_URL = 'https://productivity-app-a100.onrender.com';
+const BASE_URL = 'https://productivity-app-a100.onrender.com'; // Production backend on Render
+// const BASE_URL = 'http://10.118.143.215:3000'; // Local backend (use for testing)
 
 const api = axios.create({
     baseURL: BASE_URL,
-    timeout: 10000, // 10 second timeout
+    timeout: 60000, // 60 second timeout for Render cold starts
 });
 
 // Interceptor to automatically add the JWT token to every request

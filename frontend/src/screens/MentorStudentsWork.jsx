@@ -110,8 +110,33 @@ const MentorStudentsWork = () => {
                 <View style={[styles.divider, { backgroundColor: theme.borderColor }]} />
 
                 {/* CONTENT */}
-                <Text style={[styles.sectionLabel, { color: theme.textSub }]}>Tasks Completed</Text>
-                <Text style={[styles.contentText, { color: theme.textMain }]}>{item.tasksCompleted}</Text>
+                {item.timeSlots && item.timeSlots.length > 0 && (
+                    <View style={{ marginBottom: 16 }}>
+                        <Text style={[styles.sectionLabel, { color: theme.textSub }]}>Schedule / Time Blocks</Text>
+                        {item.timeSlots.map((slot, index) => (
+                            <View key={slot._id || index} style={{ flexDirection: 'row', marginBottom: 6 }}>
+                                <Text style={{ color: theme.textMain, fontWeight: '700', width: 100 }}>
+                                    {slot.startTime} - {slot.endTime}
+                                </Text>
+                                <Text style={{ color: theme.primaryBlue, fontWeight: '600', textTransform: 'capitalize', marginRight: 6 }}>
+                                    {slot.subject}
+                                </Text>
+                                {slot.taskDescription ? (
+                                    <Text style={{ color: theme.textMain, flex: 1 }} numberOfLines={2}>
+                                        - {slot.taskDescription}
+                                    </Text>
+                                ) : null}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
+                {item.tasksCompleted ? (
+                    <>
+                        <Text style={[styles.sectionLabel, { color: theme.textSub }]}>Tasks Completed</Text>
+                        <Text style={[styles.contentText, { color: theme.textMain }]}>{item.tasksCompleted}</Text>
+                    </>
+                ) : null}
 
                 {item.notes ? (
                     <>

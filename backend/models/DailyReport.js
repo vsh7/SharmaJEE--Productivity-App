@@ -11,6 +11,18 @@ const DailyReportSchema = mongoose.Schema(
             type: Date,
             required: true,
         },
+        timeSlots: [
+            {
+                startTime: { type: String, required: true },
+                endTime: { type: String, required: true },
+                subject: { 
+                    type: String, 
+                    required: true, 
+                    enum: ['physics', 'chemistry', 'math', 'biology'] 
+                },
+                taskDescription: { type: String, default: "" },
+            }
+        ],
         hours: {
             physics: { type: Number, default: 0 },
             chemistry: { type: Number, default: 0 },

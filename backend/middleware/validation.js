@@ -78,37 +78,33 @@ const reportValidation = [
     .isISO8601()
     .withMessage("Date must be a valid ISO 8601 date"),
 
-  body("hours.physics")
+  body("timeSlots")
     .optional()
-    .isFloat({ min: 0, max: 24 })
-    .withMessage("Physics hours must be between 0 and 24"),
+    .isArray()
+    .withMessage("timeSlots must be an array"),
 
-  body("hours.chemistry")
-    .optional()
-    .isFloat({ min: 0, max: 24 })
-    .withMessage("Chemistry hours must be between 0 and 24"),
+  body("timeSlots.*.startTime")
+    .trim()
+    .notEmpty()
+    .withMessage("Time slot start time is required"),
 
-  body("hours.math")
-    .optional()
-    .isFloat({ min: 0, max: 24 })
-    .withMessage("Math hours must be between 0 and 24"),
+  body("timeSlots.*.endTime")
+    .trim()
+    .notEmpty()
+    .withMessage("Time slot end time is required"),
 
-  body("hours.biology")
-    .optional()
-    .isFloat({ min: 0, max: 24 })
-    .withMessage("Biology hours must be between 0 and 24"),
+  body("timeSlots.*.subject")
+    .trim()
+    .notEmpty()
+    .withMessage("Time slot subject is required")
+    .isIn(['physics', 'chemistry', 'math', 'biology'])
+    .withMessage("Subject must be physics, chemistry, math, or biology"),
 
-  body("tasksCompleted")
+  body("notes")
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage("Tasks completed description must not exceed 500 characters"),
-
-  body("challenges")
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage("Challenges description must not exceed 500 characters"),
+    .withMessage("Notes must not exceed 500 characters"),
 
   handleValidationErrors
 ];

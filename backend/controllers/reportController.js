@@ -6,43 +6,42 @@ const DailyReport = require("../models/DailyReport");
 const submitDailyReport = async (req, res) => {
     try {
         const studentId = req.user.id;
-        const { date, hours, totalHours, tasksCompleted, notes } = req.body;
+        const { date, timeSlots, notes } = req.body;
 
-        // Validation: Check each subject's hours
-        const subjects = ['physics', 'chemistry', 'math', 'biology'];
-        for (const subject of subjects) {
-            const subjectHours = parseFloat(hours[subject]) || 0;
-            if (subjectHours > 24) {
-                return res.status(400).json({
-                    message: `${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot exceed 24 hours per day!`
-                });
-            }
-            if (subjectHours < 0) {
-                return res.status(400).json({
-                    message: `${subject.charAt(0).toUpperCase() + subject.slice(1)} cannot be negative!`
-                });
-            }
-        }
+        let hours = { physics: 0, chemistry: 0, math: 0, biology: 0 };
+        let totalHours = 0;
+        let tasksCompletedArray = [];
 
-        // Validation: Check total hours
-        if (totalHours > 24) {
-            return res.status(400).json({
-                message: "Total study hours cannot exceed 24 hours per day!"
+        if (timeSlots && Array.isArray(timeSlots)) {
+            timeSlots.forEach(slot => {
+                // Expected format HH:MM
+                const [startH, startM] = (slot.startTime || "00:00").split(':').map(Number);
+                const [endH, endM] = (slot.endTime || "00:00").split(':').map(Number);
+                
+                if (!isNaN(startH) && !isNaN(startM) && !isNaN(endH) && !isNaN(endM)) {
+                    let duration = (endH + endM / 60) - (startH + startM / 60);
+                    if (duration < 0) duration += 24; // Handle over midnight if any
+                    
+                    if (slot.subject && hours[slot.subject] !== undefined) {
+                        hours[slot.subject] += duration;
+                        totalHours += duration;
+                    }
+                }
+                
+                if (slot.taskDescription && slot.taskDescription.trim() !== '') {
+                    tasksCompletedArray.push(slot.taskDescription.trim());
+                }
             });
         }
-
-        if (totalHours < 0) {
-            return res.status(400).json({
-                message: "Total hours cannot be negative!"
-            });
-        }
+        
+        const tasksCompleted = tasksCompletedArray.join(', ');
 
         const normalizedDate = new Date(date);
         normalizedDate.setHours(0, 0, 0, 0);
 
         const report = await DailyReport.findOneAndUpdate(
             { student: studentId, date: normalizedDate },
-            { hours, totalHours, tasksCompleted, notes },
+            { timeSlots, hours, totalHours, tasksCompleted, notes },
             { new: true, upsert: true } // If it doesn't exist, create it. If it does, update it.
         );
 
@@ -74,6 +73,7 @@ const getTodayReport = async (req, res) => {
             // Return empty default state if not found
             return res.status(200).json({
                 date: today,
+                timeSlots: [],
                 hours: { physics: 0, chemistry: 0, math: 0, biology: 0 },
                 totalHours: 0,
                 tasksCompleted: "",
